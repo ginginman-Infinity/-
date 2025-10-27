@@ -49,8 +49,11 @@
     if (!id) {
       photoDiv.textContent = "IDが指定されていません。";
     } else {
-      const { data } = supabase.storage.from("photos").getPublicUrl(`${id}.jpg`);
-      const url = data.publicUrl;
+     const { data } = supabase.storage
+  .from("photos")
+  .getPublicUrl(`photo_${id}.jpg`);
+const imageUrl = data.publicUrl;
+document.getElementById("photo").src = imageUrl;
 
       photoDiv.innerHTML = `<img src="${url}" alt="撮影写真"><p class="small">ID: ${id}</p>`;
     }

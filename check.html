@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>撮影写真の確認</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #222;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .card {
+      background: #111;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+    }
+    img {
+      max-width: 100%;
+      border-radius: 8px;
+    }
+    .small {
+      color: #ccc;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>撮影写真</h2>
+    <div id="photo">読み込み中...</div>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+    import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    const id = new URLSearchParams(location.search).get("id");
+    const photoDiv = document.getElementById("photo");
+
+    if (!id) {
+      photoDiv.textContent = "IDが指定されていません。";
+    } else {
+      const { data } = supabase.storage.from("photos").getPublicUrl(`${id}.jpg`);
+      const url = data.publicUrl;
+
+      photoDiv.innerHTML = `<img src="${url}" alt="撮影写真"><p class="small">ID: ${id}</p>`;
+    }
+  </script>
+</body>
+</html>

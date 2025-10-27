@@ -1,20 +1,125 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>銀翼騎士団バンザイ</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>内カメラ撮影ツール</title>
   <style>
     body {
-      background-color: white;
-      color: black;
-      font-size: 50px;
+      font-family: system-ui, sans-serif;
+      background: #111;
+      color: #fff;
+      height: 100vh;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .box {
+      background: #000;
+      padding: 25px;
+      border-radius: 16px;
       text-align: center;
-      margin-top: 20%;
-      font-family: 'Arial', sans-serif;
+      width: 90%;
+      max-width: 380px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.6);
+    }
+    video {
+      width: 100%;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      background: #222;
+    }
+    button {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 12px;
+      font-size: 1rem;
+      border: 2px solid orange;
+      background: #1a1a1a;
+      color: white;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #2a2a2a;
+    }
+    #status {
+      font-size: 0.9rem;
+      color: #ccc;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
-  銀翼騎士団バンザイ
+  <div class="box">
+    <h2>📸 カメラ撮影</h2>
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas" style="display:none;"></canvas>
+    <button id="startBtn">カメラを起動する</button>
+    <button id="captureBtn" style="display:none;">撮影して送信</button>
+    <div id="status"></div>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+    import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const startBtn = document.getElementById("startBtn");
+    const captureBtn = document.getElementById("captureBtn");
+    const status = document.getElementById("status");
+
+    const id = Math.random().toString(36).substring(2, 9);
+
+    let stream;
+
+    startBtn.addEventListener("click", async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user" }, // 内カメ
+          audio: false,
+        });
+        video.srcObject = stream;
+        startBtn.style.display = "none";
+        captureBtn.style.display = "block";
+        status.textContent = "カメラ起動中...";
+      } catch (err) {
+        status.textContent = "カメラが許可されませんでした: " + err.message;
+      }
+    });
+
+    captureBtn.addEventListener("click", async () => {
+      status.textContent = "撮影中...";
+      const ctx = canvas.getContext("2d");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const blob = await new Promise((res) =>
+        canvas.toBlob(res, "image/jpeg", 0.85)
+      );
+
+      const { error } = await supabase.storage
+        .from("photos")
+        .upload(`${id}.jpg`, blob, { upsert: true });
+
+      if (error) {
+        status.textContent = "送信エラー: " + error.message;
+      } else {
+        status.innerHTML = `
+          ✅ 送信完了<br>
+          <a href="check.html?id=${id}" target="_blank" style="color:orange;">確認ページを開く</a>
+        `;
+      }
+
+      // カメラ停止
+      stream.getTracks().forEach((track) => track.stop());
+      video.srcObject = null;
+      captureBtn.style.display = "none";
+    });
+  </script>
 </body>
 </html>

